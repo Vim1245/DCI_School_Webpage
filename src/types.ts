@@ -91,3 +91,31 @@ export interface ChatMessage {
   text: string;
   timestamp: string;
 }
+
+export interface Facility {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  image: string;
+  features: string[];
+}
+
+export interface SchoolEvent {
+  id: string;
+  title: string;
+  date: string;
+  time?: string;
+  category: string;
+  location: string;
+  description: string;
+  image: string;
+}
+
+export interface GalleryItem {
+  id: string;
+  title: string;
+  category: 'Campus' | 'Classrooms' | 'Students' | 'Sports' | 'Events' | 'Activities';
+  image: string;
+  caption?: string;
+}

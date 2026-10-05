@@ -1,4 +1,4 @@
-import { Notice, Program, FacultyMember, StudentRecord } from '../types';
+import { Notice, Program, FacultyMember, StudentRecord, Facility, SchoolEvent, GalleryItem } from '../types';
 
 export const INITIAL_NOTICES: Notice[] = [
   {
@@ -167,8 +167,216 @@ export const DEMO_STUDENT_RECORD: StudentRecord = {
 
 export const SCHOOL_STATS = [
   { label: 'Pass Rate in Board Exams', value: '100%' },
-  { label: 'Student to Teacher Ratio', value: '15 : 1' },
-  { label: 'Acre Eco-Friendly Campus', value: '25+' },
-  { label: 'STEM & Robotics Labs', value: '12' },
-  { label: 'Global University Admits', value: '98%' },
+  { label: 'Student to Teacher Ratio', value: '12 : 1' },
+  { label: 'Acre Smart Green Campus', value: '25+' },
+  { label: 'STEM & AI Innovation Labs', value: '12+' },
+  { label: 'Global University Placements', value: '98%' },
+];
+
+export const WHY_CHOOSE_US = [
+  {
+    id: 'w1',
+    title: 'Experienced Faculty',
+    description: 'Internationally trained educators with average 14+ years pedagogy experience dedicated to student-centered mentoring.',
+    iconName: 'GraduationCap',
+  },
+  {
+    id: 'w2',
+    title: 'Smart Classrooms',
+    description: 'Ergonomic air-conditioned classrooms equipped with interactive 85" 4K touch panels, audio systems, and hybrid digital learning tools.',
+    iconName: 'Laptop',
+  },
+  {
+    id: 'w3',
+    title: 'Modern Laboratories',
+    description: 'High-spec AI & Robotics hubs, 3D printing makerspaces, and advanced Physics, Chemistry & Biotechnology research labs.',
+    iconName: 'FlaskConical',
+  },
+  {
+    id: 'w4',
+    title: 'Digital Learning',
+    description: 'Individual digital portfolios, customized learning analytics, e-library with 50,000+ volumes, and world-class digital citizenship.',
+    iconName: 'Cpu',
+  },
+  {
+    id: 'w5',
+    title: 'Sports & Activities',
+    description: 'FIFA-certified football turf, Olympic 50m swimming pool, indoor wooden badminton courts, gymnastics, and certified sports coaching.',
+    iconName: 'Trophy',
+  },
+  {
+    id: 'w6',
+    title: 'Safe Campus',
+    description: 'Gated 25-acre surveillance with 350+ CCTV cameras, RFID biometric access, GPS-tracked school buses, and 24/7 pediatric nurse station.',
+    iconName: 'ShieldCheck',
+  },
+];
+
+export const SCHOOL_FACILITIES: Facility[] = [
+  {
+    id: 'fac-1',
+    name: 'Smart Interactive Classrooms',
+    category: 'Academics',
+    description: 'Acoustically treated, climate-controlled classrooms with 4K touch-enabled smart boards and flexible collaborative seating.',
+    image: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=800&q=80',
+    features: ['85" Interactive Displays', 'Ergonomic Modular Desks', 'High-Speed Wi-Fi 6', 'Natural Daylighting'],
+  },
+  {
+    id: 'fac-2',
+    name: 'AI & Robotics Innovation Hub',
+    category: 'Technology',
+    description: 'Equipped with robotics kits, Arduino/Raspberry Pi stations, humanoid bot simulators, and GPU-powered AI learning workstations.',
+    image: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80',
+    features: ['3D Printers & Laser Cutters', 'Industrial Robotics Kits', 'IoT Sensor Banks', 'VR/AR Immersive Lab'],
+  },
+  {
+    id: 'fac-3',
+    name: 'Integrated Science Laboratories',
+    category: 'Science',
+    description: 'Purpose-built Physics, Chemistry, and Biology laboratories conforming to international Cambridge & CBSE safety specifications.',
+    image: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80',
+    features: ['Fume Hoods & Eye-Wash Stations', 'Digital Microscopes', 'Individual Lab Workbenches', 'Spectrophotometry Sets'],
+  },
+  {
+    id: 'fac-4',
+    name: 'Central Digital & Print Library',
+    category: 'Learning',
+    description: 'A serene 2-level knowledge sanctuary hosting over 30,000 print titles, international academic journals, and cozy reading alcoves.',
+    image: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=800&q=80',
+    features: ['Kindle e-Readers', 'Silent Study Cubicles', 'Storytelling Arena', 'Research Database Subscriptions'],
+  },
+  {
+    id: 'fac-5',
+    name: 'Olympic Swimming & Sports Complex',
+    category: 'Athletics',
+    description: 'Featuring a heated 50-meter 8-lane competition swimming pool, synthetic athletic track, football pitch, and indoor sports hall.',
+    image: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80',
+    features: ['Heated Competition Pool', 'FIFA Standard Turf', '4 Indoor Badminton Courts', 'Certified NIS Coaches'],
+  },
+  {
+    id: 'fac-6',
+    name: 'Performing Arts & Visual Music Studio',
+    category: 'Arts',
+    description: 'Sound-proofed acoustic music suites with grand pianos, orchestral instruments, Indian classical dance hall, and pottery wheels.',
+    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
+    features: ['Digital Audio Workstations', 'Acoustic Soundproofing', 'Dance Mirrors & Sprung Floor', 'Pottery & Sculpture Kiln'],
+  },
+  {
+    id: 'fac-7',
+    name: 'GPS-Monitored Safe Transportation',
+    category: 'Logistics',
+    description: 'Fleet of 45+ air-conditioned school buses with live GPS tracking, speed governors, CCTV cameras, and female attendants.',
+    image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
+    features: ['Parent Mobile Tracking App', 'CCTV & Speed Governors', 'First Aid Certified Attendants', 'Covering 35+ City Routes'],
+  },
+  {
+    id: 'fac-8',
+    name: '25-Acre Eco-Friendly Green Campus',
+    category: 'Campus',
+    description: 'Zero-carbon footprint campus with 250kW solar canopy, rainwater harvesting lakes, organic botanical farm, and tree-lined walkways.',
+    image: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=800&q=80',
+    features: ['Solar Powered Infrastructure', 'Botanical Garden & Herbal Nursery', 'Open-Air Amphitheater', 'Pure RO Water Stations'],
+  },
+];
+
+export const UPCOMING_EVENTS: SchoolEvent[] = [
+  {
+    id: 'ev-1',
+    title: 'Annual Science & AI Innovation Expo 2026',
+    date: '2026-10-18',
+    time: '9:30 AM - 3:30 PM',
+    category: 'Innovation',
+    location: 'Main Auditorium & STEM Complex',
+    description: 'Over 120 student-designed robotic and sustainable tech exhibits reviewed by leading university professors and industry engineers.',
+    image: 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    id: 'ev-2',
+    title: 'Inter-School Aquatic Championship & Gala',
+    date: '2026-10-25',
+    time: '8:00 AM - 1:00 PM',
+    category: 'Sports',
+    location: 'DCI Olympic Aquatic Complex',
+    description: 'Welcoming 20 prestigious regional schools for competitive freestyle, backstroke, and medley relay races.',
+    image: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    id: 'ev-3',
+    title: 'DCI International Model United Nations (MUN)',
+    date: '2026-11-05',
+    time: '9:00 AM - 5:00 PM',
+    category: 'Leadership',
+    location: 'Performing Arts Hall',
+    description: 'A 3-day youth diplomacy conference simulating UN Security Council and Climate summits with student delegates from 15 nations.',
+    image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    id: 'ev-4',
+    title: 'Spring Symphony & Cultural Music Fest',
+    date: '2026-11-20',
+    time: '5:30 PM - 8:30 PM',
+    category: 'Cultural',
+    location: 'Open-Air Campus Amphitheater',
+    description: 'An evening of classical orchestral performances, contemporary jazz ensembles, and Indian classical dance by our talented student choir.',
+    image: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=800&q=80',
+  },
+];
+
+export const GALLERY_ITEMS: GalleryItem[] = [
+  {
+    id: 'g-1',
+    title: 'Aerial View of 25-Acre Smart Campus',
+    category: 'Campus',
+    image: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=800&q=80',
+    caption: 'Surrounded by lush green foliage and eco-friendly architecture.',
+  },
+  {
+    id: 'g-2',
+    title: 'Interactive Robotics & AI Coding Workshop',
+    category: 'Classrooms',
+    image: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80',
+    caption: 'Students assembling automated robotic arms and sensor rigs.',
+  },
+  {
+    id: 'g-3',
+    title: 'Collaborative Group Study in the Central Library',
+    category: 'Students',
+    image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800&q=80',
+    caption: 'Peer learning and research discussions in our modern library.',
+  },
+  {
+    id: 'g-4',
+    title: 'Inter-School Football Championship Match',
+    category: 'Sports',
+    image: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?auto=format&fit=crop&w=800&q=80',
+    caption: 'Varsity football team competing on our FIFA-standard turf.',
+  },
+  {
+    id: 'g-5',
+    title: 'Primary School Science Curiosity Lab',
+    category: 'Activities',
+    image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=800&q=80',
+    caption: 'Hands-on experiential experiments ignite young minds.',
+  },
+  {
+    id: 'g-6',
+    title: 'Annual Day Stage Drama & Performing Arts',
+    category: 'Events',
+    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
+    caption: 'Student theater troupe performing at the Grand Auditorium.',
+  },
+  {
+    id: 'g-7',
+    title: 'Olympic Swimming Pool Training Session',
+    category: 'Sports',
+    image: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80',
+    caption: 'Morning swimming coaching in our 50m temperature-controlled pool.',
+  },
+  {
+    id: 'g-8',
+    title: 'Graduation Ceremony & Farewell',
+    category: 'Events',
+    image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80',
+    caption: 'Celebrating our outgoing seniors embarking on Ivy League & premier university journeys.',
+  },
 ];

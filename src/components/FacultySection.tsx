@@ -12,6 +12,7 @@ import {
   Loader2,
   Database,
   RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 import { FACULTY_MEMBERS } from '../data/mockData';
 import { FacultyMember, SupabaseConfigStatus } from '../types';
@@ -81,49 +82,22 @@ export const FacultySection: React.FC<FacultySectionProps> = ({ supabaseStatus }
     setFormError(null);
   };
 
-  // Close Edit Modal
+  // Close modal
   const handleCloseEdit = () => {
-    if (saving) return;
-    setEditingMember(null);
-    setFormError(null);
+    if (!saving) {
+      setEditingMember(null);
+      setFormError(null);
+    }
   };
 
-  // Submit Updated Faculty Details
+  // Submit edits to backend
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingMember) return;
 
-    // Client-side Validation
-    if (!name.trim()) {
-      setFormError('Faculty name is required.');
+    if (!name.trim() || !role.trim() || !qualification.trim() || !experience.trim() || !bio.trim()) {
+      setFormError('Please fill out all required fields.');
       return;
-    }
-    if (!role.trim()) {
-      setFormError('Role / Title is required.');
-      return;
-    }
-    if (!department.trim()) {
-      setFormError('Department selection is required.');
-      return;
-    }
-    if (!qualification.trim()) {
-      setFormError('Academic qualification is required.');
-      return;
-    }
-    if (!experience.trim()) {
-      setFormError('Years of experience is required.');
-      return;
-    }
-    if (!bio.trim()) {
-      setFormError('Biography / Description is required.');
-      return;
-    }
-    if (email.trim()) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email.trim())) {
-        setFormError('Please enter a valid email address (e.g. name@school.edu).');
-        return;
-      }
     }
 
     setSaving(true);
@@ -132,11 +106,11 @@ export const FacultySection: React.FC<FacultySectionProps> = ({ supabaseStatus }
     const payload = {
       name: name.trim(),
       role: role.trim(),
-      department: department.trim(),
+      department,
       qualification: qualification.trim(),
       experience: experience.trim(),
-      email: email.trim(),
-      image: image.trim(),
+      email: email.trim() || null,
+      image: image.trim() || null,
       bio: bio.trim(),
     };
 
@@ -147,25 +121,26 @@ export const FacultySection: React.FC<FacultySectionProps> = ({ supabaseStatus }
         body: JSON.stringify(payload),
       });
 
-      const resData = await res.json();
+      const result = await res.json();
 
       if (!res.ok) {
-        throw new Error(resData.error || 'Failed to update faculty member. Please try again.');
+        throw new Error(result.error || 'Failed to update faculty details.');
       }
 
-      // Updated record from server
-      const updatedRecord: FacultyMember = resData.data || {
+      // Update local state list
+      const updatedMember: FacultyMember = {
         ...editingMember,
         ...payload,
+        email: payload.email || undefined,
+        image: payload.image || undefined,
       };
 
-      // Immediately reflect changes in the UI list
       setFacultyList((prev) =>
-        prev.map((m) => (m.id === editingMember.id ? updatedRecord : m))
+        prev.map((item) => (item.id === editingMember.id ? updatedMember : item))
       );
 
-      // Show success message
-      setSuccessMessage(`Faculty details for "${updatedRecord.name}" updated successfully!`);
+      // Show alert notice
+      setSuccessMessage(result.message || 'Faculty profile updated successfully!');
       setTimeout(() => {
         setSuccessMessage(null);
       }, 4000);
@@ -190,373 +165,375 @@ export const FacultySection: React.FC<FacultySectionProps> = ({ supabaseStatus }
   });
 
   return (
-    <div className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1E293B] pb-6">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold uppercase tracking-wider">
-            <Users className="w-3.5 h-3.5" /> World-Class Educators
+    <section id="faculty" className="py-20 bg-slate-50/70 border-b border-slate-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-200">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-bold uppercase tracking-wider">
+              <Users className="w-3.5 h-3.5 text-blue-600" /> World-Class Educators & Mentors
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+              Meet Our Distinguished Faculty
+            </h1>
+            <p className="text-slate-600 text-sm max-w-2xl">
+              Our team comprises international scholars, Olympiad mentors, and passionate educators dedicated to student growth.
+            </p>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mt-2">
-            Meet Our Distinguished Faculty & Leadership
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Our team comprises international scholars, Olympiad mentors, and passionate educators dedicated to student growth.
-          </p>
-        </div>
 
-        <button
-          onClick={fetchFaculty}
-          disabled={loading}
-          className="self-start md:self-auto px-3.5 py-2 rounded-lg bg-[#11141B] border border-[#1E293B] text-slate-300 hover:text-white hover:border-slate-700 text-xs font-mono flex items-center gap-2 transition-colors"
-          title="Refresh faculty list"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 text-emerald-400 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
-        </button>
-      </div>
-
-      {/* Database Mode Notice Badge */}
-      <div className="flex items-center justify-between bg-[#161A23] p-4 rounded-xl border border-[#1E293B] text-xs text-slate-300 font-mono">
-        <div className="flex items-center gap-2">
-          <Database className="w-4 h-4 text-emerald-400" />
-          <span>
-            {supabaseStatus?.configured
-              ? 'Data Source: Live Supabase Postgres Table ("faculty")'
-              : 'Data Source: Active Application Database (Edits sync live)'}
-          </span>
-        </div>
-        <span className="font-semibold text-emerald-400">
-          Total Faculty: {filtered.length}
-        </span>
-      </div>
-
-      {/* Success Notification Alert Banner */}
-      {successMessage && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-between gap-3 text-xs font-mono animate-fadeIn">
-          <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-            <span>{successMessage}</span>
-          </div>
           <button
-            onClick={() => setSuccessMessage(null)}
-            className="text-slate-400 hover:text-white p-1 rounded transition-colors"
-            title="Dismiss notification"
+            onClick={fetchFaculty}
+            disabled={loading}
+            className="self-start md:self-auto px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-300 text-xs font-semibold flex items-center gap-2 shadow-2xs transition-colors"
+            title="Refresh faculty list"
           >
-            <X className="w-3.5 h-3.5" />
+            <RefreshCw className={`w-3.5 h-3.5 text-blue-600 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh Directory</span>
           </button>
         </div>
-      )}
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search faculty by name or subject..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
-          />
+        {/* Database Mode Notice Badge */}
+        <div className="flex flex-wrap items-center justify-between bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs text-xs text-slate-600">
+          <div className="flex items-center gap-2">
+            <Database className="w-4 h-4 text-emerald-600" />
+            <span>
+              {supabaseStatus?.configured
+                ? 'Data Source: Live Supabase Postgres Table ("faculty")'
+                : 'Data Source: Active School Portal Directory (Edits sync live)'}
+            </span>
+          </div>
+          <span className="font-semibold text-blue-600">
+            Total Faculty: {filtered.length}
+          </span>
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
-          {departments.map((d) => (
+        {/* Success Notification Alert Banner */}
+        {successMessage && (
+          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between gap-3 text-xs shadow-2xs animate-in fade-in duration-200">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{successMessage}</span>
+            </div>
             <button
-              key={d}
-              onClick={() => setDept(d)}
-              className={`px-3.5 py-1.5 rounded text-xs font-mono font-semibold whitespace-nowrap transition-colors ${
-                dept === d
-                  ? 'bg-[#1E293B] text-emerald-400 border border-emerald-500/30'
-                  : 'bg-[#11141B] text-slate-400 border border-[#1E293B] hover:text-white'
-              }`}
+              onClick={() => setSuccessMessage(null)}
+              className="text-slate-500 hover:text-slate-700 p-1 rounded"
+              title="Dismiss notification"
             >
-              {d}
+              <X className="w-3.5 h-3.5" />
             </button>
-          ))}
-        </div>
-      </div>
+          </div>
+        )}
 
-      {/* Grid */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-16 bg-[#11141B] rounded-xl border border-[#1E293B] p-8 space-y-3">
-          <Users className="w-10 h-10 text-slate-600 mx-auto" />
-          <p className="text-sm font-mono text-slate-400">No faculty members found matching your search.</p>
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search faculty by name or subject..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-2xs transition-all"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
+            {departments.map((d) => (
+              <button
+                key={d}
+                onClick={() => setDept(d)}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                  dept === d
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300 hover:text-blue-600'
+                }`}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
         </div>
-      ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filtered.map((member) => (
-            <div
-              key={member.id}
-              className="bg-[#11141B] rounded-xl border border-[#1E293B] overflow-hidden hover:border-slate-700 transition-all flex flex-col group"
-            >
-              {/* Image & Header */}
-              <div className="relative h-64 overflow-hidden bg-slate-900">
-                {member.image ? (
-                  <img
-                    src={member.image}
-                    alt={member.name}
-                    className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-600 bg-slate-900">
-                    <Users className="w-12 h-12 opacity-30" />
+
+        {/* Grid */}
+        {filtered.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-8 space-y-3">
+            <Users className="w-10 h-10 text-slate-400 mx-auto" />
+            <p className="text-sm text-slate-500">No faculty members found matching your search.</p>
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {filtered.map((member) => (
+              <div
+                key={member.id}
+                className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 flex flex-col group"
+              >
+                {/* Image & Header */}
+                <div className="relative h-64 overflow-hidden bg-slate-100">
+                  {member.image ? (
+                    <img
+                      src={member.image}
+                      alt={member.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-100">
+                      <Users className="w-12 h-12 opacity-30" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute bottom-3 left-3 right-3 text-white">
+                    <span className="px-2.5 py-0.5 rounded-md bg-blue-600/90 text-[10px] font-bold uppercase tracking-wider backdrop-blur-xs">
+                      {member.department}
+                    </span>
+                    <h3 className="text-base font-bold mt-1 text-white">{member.name}</h3>
                   </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0C10] via-transparent to-transparent pointer-events-none" />
-                <div className="absolute bottom-3 left-3 right-3 text-white">
-                  <span className="px-2 py-0.5 rounded bg-emerald-600/90 text-[10px] font-mono font-bold uppercase tracking-wider">
-                    {member.department}
-                  </span>
-                  <h3 className="text-base font-bold mt-1 text-white">{member.name}</h3>
+                </div>
+
+                {/* Card Details */}
+                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  <div className="space-y-2">
+                    <div className="text-xs font-bold text-blue-600">
+                      {member.role}
+                    </div>
+                    <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                      <Award className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span>{member.qualification}</span>
+                    </div>
+                    <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed pt-1">
+                      {member.bio}
+                    </p>
+                  </div>
+
+                  {/* Card Actions Footer */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-slate-500 truncate mr-2 font-medium">
+                      {member.experience}
+                    </span>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Functional Edit Button */}
+                      <button
+                        onClick={() => handleOpenEdit(member)}
+                        className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-300 flex items-center gap-1.5 transition-colors"
+                        title={`Edit ${member.name}'s details`}
+                      >
+                        <Edit2 className="w-3 h-3 text-blue-600" />
+                        <span>Edit</span>
+                      </button>
+
+                      {member.email && (
+                        <a
+                          href={`mailto:${member.email}`}
+                          className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-blue-600 hover:border-blue-300 transition-colors"
+                          title={`Email ${member.name}`}
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+        )}
 
-              {/* Card Details */}
-              <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                <div className="space-y-2">
-                  <div className="text-xs font-mono font-bold text-emerald-400">
-                    {member.role}
+        {/* Edit Faculty Modal */}
+        {editingMember && (
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white border border-slate-200 rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative my-8 space-y-6 animate-in fade-in zoom-in-95 duration-200">
+              {/* Modal Header */}
+              <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+                <div>
+                  <div className="flex items-center gap-1.5 text-blue-600 text-xs uppercase font-bold tracking-wider">
+                    <Edit2 className="w-3.5 h-3.5" /> Edit Faculty Details
                   </div>
-                  <div className="text-xs text-slate-400 flex items-center gap-1 font-mono">
-                    <Award className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                    <span>{member.qualification}</span>
-                  </div>
-                  <p className="text-xs text-slate-300 line-clamp-3 leading-relaxed pt-1">
-                    {member.bio}
+                  <h2 className="text-xl font-extrabold text-slate-900 mt-1">
+                    Updating: {editingMember.name}
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Faculty ID: <span className="font-semibold text-blue-600">{editingMember.id}</span>
                   </p>
                 </div>
 
-                {/* Card Actions Footer */}
-                <div className="pt-3 border-t border-[#1E293B] flex items-center justify-between text-xs font-mono">
-                  <span className="text-slate-400 truncate mr-2">
-                    {member.experience}
-                  </span>
-
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {/* Functional Edit Button */}
-                    <button
-                      onClick={() => handleOpenEdit(member)}
-                      className="px-2.5 py-1.5 rounded bg-[#161A23] border border-[#1E293B] text-slate-300 hover:text-emerald-400 hover:border-emerald-500/50 flex items-center gap-1.5 transition-colors"
-                      title={`Edit ${member.name}'s details`}
-                    >
-                      <Edit2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Edit</span>
-                    </button>
-
-                    {member.email && (
-                      <a
-                        href={`mailto:${member.email}`}
-                        className="p-1.5 rounded bg-[#161A23] border border-[#1E293B] text-emerald-400 hover:border-emerald-500/50 transition-colors"
-                        title={`Email ${member.name}`}
-                      >
-                        <Mail className="w-3.5 h-3.5" />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Edit Faculty Modal */}
-      {editingMember && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#11141B] border border-[#1E293B] rounded-xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative my-8 space-y-6">
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-[#1E293B] pb-4">
-              <div>
-                <div className="flex items-center gap-1.5 text-emerald-400 font-mono text-xs uppercase font-bold tracking-wider">
-                  <Edit2 className="w-3.5 h-3.5" /> Edit Faculty Details
-                </div>
-                <h2 className="text-xl font-extrabold text-white mt-1">
-                  Updating: {editingMember.name}
-                </h2>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">
-                  ID: <span className="text-emerald-400">{editingMember.id}</span>
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleCloseEdit}
-                disabled={saving}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#161A23] transition-colors"
-                title="Close modal"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Error Message inside Modal */}
-            {formError && (
-              <div className="p-3.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-mono flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                <span>{formError}</span>
-              </div>
-            )}
-
-            {/* Edit Form */}
-            <form onSubmit={handleSaveEdit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Name */}
-                <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">
-                    Full Name <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Dr. Jane Doe"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                {/* Role */}
-                <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">
-                    Role / Designation <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    placeholder="e.g. Head of Mathematics & Olympiad Training"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                {/* Department */}
-                <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">
-                    Department <span className="text-red-400">*</span>
-                  </label>
-                  <select
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
-                  >
-                    {departmentOptions.map((deptName) => (
-                      <option key={deptName} value={deptName}>
-                        {deptName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Qualification */}
-                <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">
-                    Academic Qualification <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={qualification}
-                    onChange={(e) => setQualification(e.target.value)}
-                    placeholder="e.g. Ph.D. in Educational Leadership"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                {/* Experience */}
-                <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">
-                    Experience <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={experience}
-                    onChange={(e) => setExperience(e.target.value)}
-                    placeholder="e.g. 15+ Years Faculty"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g. educator@mnjua-school.edu"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
-              {/* Photo Image URL */}
-              <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">
-                  Profile Photo URL
-                </label>
-                <input
-                  type="text"
-                  value={image}
-                  onChange={(e) => setImage(e.target.value)}
-                  placeholder="Enter faculty photo URL"
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              {/* Biography */}
-              <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">
-                  Biography & Specialization <span className="text-red-400">*</span>
-                </label>
-                <textarea
-                  required
-                  rows={4}
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="Describe academic credentials, mentorship focus, and research background..."
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              {/* Modal Actions */}
-              <div className="pt-3 border-t border-[#1E293B] flex items-center justify-end gap-3 font-mono">
                 <button
                   type="button"
                   onClick={handleCloseEdit}
                   disabled={saving}
-                  className="px-4 py-2 rounded-lg text-slate-400 hover:text-white text-xs hover:bg-[#161A23] transition-colors"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                  title="Close modal"
                 >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(16,185,129,0.25)] flex items-center gap-2 transition-all disabled:opacity-50"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving Changes...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-3.5 h-3.5" />
-                      <span>Save Changes</span>
-                    </>
-                  )}
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
+
+              {/* Error Message inside Modal */}
+              {formError && (
+                <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              {/* Edit Form */}
+              <form onSubmit={handleSaveEdit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Name */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. Dr. Jane Doe"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+
+                  {/* Role */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Role / Designation <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={role}
+                      onChange={(e) => setRole(e.target.value)}
+                      placeholder="e.g. Head of Mathematics & Olympiad Training"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+
+                  {/* Department */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Department <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 font-medium"
+                    >
+                      {departmentOptions.map((deptName) => (
+                        <option key={deptName} value={deptName}>
+                          {deptName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Qualification */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Academic Qualification <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={qualification}
+                      onChange={(e) => setQualification(e.target.value)}
+                      placeholder="e.g. Ph.D. in Educational Leadership"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+
+                  {/* Experience */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Experience <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={experience}
+                      onChange={(e) => setExperience(e.target.value)}
+                      placeholder="e.g. 15+ Years Faculty"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="e.g. educator@dci-school.edu"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+                </div>
+
+                {/* Photo Image URL */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Profile Photo URL
+                  </label>
+                  <input
+                    type="text"
+                    value={image}
+                    onChange={(e) => setImage(e.target.value)}
+                    placeholder="Enter faculty photo URL"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+
+                {/* Biography */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Biography & Specialization <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Describe academic credentials, mentorship focus, and research background..."
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+
+                {/* Modal Actions */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCloseEdit}
+                    disabled={saving}
+                    className="px-4 py-2.5 rounded-lg text-slate-600 hover:text-slate-900 text-xs font-semibold hover:bg-slate-100 transition-colors"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Saving Changes...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Save Changes</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </section>
   );
 };

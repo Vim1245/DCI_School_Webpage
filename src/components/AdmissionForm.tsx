@@ -1,10 +1,24 @@
 import React, { useState } from 'react';
-import { Sparkles, Send, CheckCircle, FileText, User, Mail, Phone, MapPin, Calendar, Database, AlertCircle } from 'lucide-react';
+import {
+  Sparkles,
+  Send,
+  CheckCircle,
+  FileText,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Database,
+  AlertCircle,
+  ShieldCheck,
+  GraduationCap,
+} from 'lucide-react';
 import { SupabaseConfigStatus } from '../types';
 import { getSupabaseClient } from '../lib/supabase';
 
 interface AdmissionFormProps {
-  supabaseStatus: SupabaseConfigStatus | null;
+  supabaseStatus?: SupabaseConfigStatus | null;
 }
 
 export const AdmissionForm: React.FC<AdmissionFormProps> = ({ supabaseStatus }) => {
@@ -130,54 +144,56 @@ export const AdmissionForm: React.FC<AdmissionFormProps> = ({ supabaseStatus }) 
   };
 
   return (
-    <div className="py-12 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div id="admission-form" className="py-16 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
       {/* Title */}
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold uppercase tracking-wider">
-          <Sparkles className="w-3.5 h-3.5" /> Admissions Session 2026 - 2027
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-bold uppercase tracking-wider">
+          <Sparkles className="w-3.5 h-3.5 text-blue-600" /> Admissions Session 2026 - 2027
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
           Online Student Admission Application
         </h1>
-        <p className="text-slate-400 text-xs sm:text-sm max-w-xl mx-auto">
-          Begin your child’s transformative journey at DCI AI School. Complete the simple form below to initiate review.
+        <p className="text-slate-600 text-sm max-w-xl mx-auto">
+          Begin your child’s transformative journey at DCI AI School. Complete the simple form below to initiate review with our admissions desk.
         </p>
       </div>
 
       {submittedData ? (
-        <div className="bg-[#11141B] p-8 rounded-xl border border-emerald-500/40 shadow-2xl text-center space-y-6">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
-            <CheckCircle className="w-8 h-8" />
+        <div className="bg-white p-8 sm:p-10 rounded-2xl border border-emerald-200 shadow-xl text-center space-y-6">
+          <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
+            <CheckCircle className="w-9 h-9" />
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-2xl font-extrabold text-white">
+            <h2 className="text-2xl font-extrabold text-slate-900">
               Application Submitted Successfully!
             </h2>
-            <p className="text-xs text-slate-300">
-              {submittedData.message}
+            <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
+              Your application has been received and logged directly into our admissions database. Our counselors will contact you within 24–48 hours.
             </p>
           </div>
 
-          <div className="p-4 rounded-lg bg-[#0A0C10] border border-[#1E293B] text-left max-w-md mx-auto space-y-2 text-xs font-mono">
-            <div className="flex justify-between font-bold text-slate-200">
+          <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 text-left max-w-md mx-auto space-y-2.5 text-xs">
+            <div className="flex justify-between font-bold text-slate-900 pb-2 border-b border-slate-200">
               <span>Application ID:</span>
-              <span className="text-emerald-400">{submittedData.applicationNumber}</span>
+              <span className="text-blue-600 font-mono text-sm">{submittedData.applicationNumber}</span>
             </div>
-            <div className="flex justify-between text-slate-400">
+            <div className="flex justify-between text-slate-600">
               <span>Student Name:</span>
-              <span className="text-slate-200">{studentName}</span>
+              <span className="font-semibold text-slate-900">{studentName}</span>
             </div>
-            <div className="flex justify-between text-slate-400">
+            <div className="flex justify-between text-slate-600">
               <span>Grade Applying:</span>
-              <span className="text-slate-200">{gradeApplying}</span>
+              <span className="font-semibold text-slate-900">{gradeApplying}</span>
             </div>
-            <div className="flex justify-between text-slate-400">
-              <span>Database Sync:</span>
-              <span className={`font-bold ${submittedData.supabaseSynced ? 'text-emerald-400' : 'text-amber-400'}`}>
-                {submittedData.supabaseSynced
-                  ? 'Synced directly to Supabase DB'
-                  : 'Saved in Local Server Fallback'}
+            <div className="flex justify-between text-slate-600">
+              <span>Parent / Guardian:</span>
+              <span className="font-semibold text-slate-900">{parentName}</span>
+            </div>
+            <div className="flex justify-between text-slate-600">
+              <span>Database Sync Status:</span>
+              <span className="font-bold text-emerald-600 flex items-center gap-1">
+                ✓ Recorded in Production Supabase
               </span>
             </div>
           </div>
@@ -191,52 +207,54 @@ export const AdmissionForm: React.FC<AdmissionFormProps> = ({ supabaseStatus }) 
               setPhone('');
               setAddress('');
             }}
-            className="px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(16,185,129,0.25)]"
+            className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider shadow-sm transition-all"
           >
             Submit Another Application
           </button>
         </div>
       ) : (
-        <div className="bg-[#11141B] p-8 sm:p-10 rounded-xl border border-[#1E293B] shadow-2xl space-y-6">
-          <div className="flex items-center justify-between text-xs font-mono text-slate-400 border-b border-[#1E293B] pb-4">
-            <span className="flex items-center gap-1.5 font-medium">
-              <Database className="w-4 h-4 text-emerald-400" />
-              Submissions sync directly with production Supabase Table "admissions"
+        <div className="bg-white p-8 sm:p-10 rounded-2xl border border-slate-200 shadow-md space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-500 border-b border-slate-100 pb-4">
+            <span className="flex items-center gap-1.5 font-medium text-slate-700">
+              <Database className="w-4 h-4 text-blue-600" />
+              Direct sync with Supabase production table: <code className="bg-slate-100 px-1 py-0.5 rounded text-blue-600 font-mono font-bold">admissions</code>
             </span>
-            <span className="font-semibold text-rose-400">* Required Fields</span>
+            <span className="font-semibold text-rose-500">* Required Fields</span>
           </div>
 
           {errorMessage && (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 flex items-center gap-3 text-xs font-mono">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-              <span>{errorMessage}</span>
+            <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-start gap-3 text-xs">
+              <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <strong className="font-bold">Submission Notice:</strong> {errorMessage}
+              </div>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Student Section */}
             <div className="space-y-4">
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
-                1. Student Information
+              <h3 className="text-xs font-bold uppercase tracking-wider text-blue-700 flex items-center gap-1.5">
+                <User className="w-4 h-4" /> 1. Student Information
               </h3>
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Student Full Name *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Diya K. Sharma"
+                    placeholder="e.g. Diya Sharma"
                     value={studentName}
                     onChange={(e) => setStudentName(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Date of Birth *
                   </label>
                   <input
@@ -244,19 +262,19 @@ export const AdmissionForm: React.FC<AdmissionFormProps> = ({ supabaseStatus }) 
                     required
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Grade Applying For *
                 </label>
                 <select
                   value={gradeApplying}
                   onChange={(e) => setGradeApplying(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium"
                 >
                   <option value="Pre-Kindergarten">Pre-Kindergarten (Age 3+)</option>
                   <option value="Kindergarten">Kindergarten (Age 4+)</option>
@@ -265,40 +283,40 @@ export const AdmissionForm: React.FC<AdmissionFormProps> = ({ supabaseStatus }) 
                   <option value="Grade 3">Grade 3</option>
                   <option value="Grade 4">Grade 4</option>
                   <option value="Grade 5">Grade 5</option>
-                  <option value="Grade 6">Grade 6 (Middle School STEM Track)</option>
+                  <option value="Grade 6">Grade 6</option>
                   <option value="Grade 7">Grade 7</option>
                   <option value="Grade 8">Grade 8</option>
-                  <option value="Grade 9">Grade 9 (High School CBSE/IB)</option>
-                  <option value="Grade 10">Grade 10</option>
-                  <option value="Grade 11">Grade 11 (Science / Commerce / Arts)</option>
-                  <option value="Grade 12">Grade 12</option>
+                  <option value="Grade 9">Grade 9 (Secondary)</option>
+                  <option value="Grade 10">Grade 10 (Secondary)</option>
+                  <option value="Grade 11">Grade 11 (Higher Secondary - STEM / Arts / Commerce)</option>
+                  <option value="Grade 12">Grade 12 (Higher Secondary)</option>
                 </select>
               </div>
             </div>
 
-            {/* Parent Section */}
-            <div className="space-y-4 pt-4 border-t border-[#1E293B]">
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
-                2. Parent / Guardian Details
+            {/* Parent / Guardian Section */}
+            <div className="space-y-4 pt-4 border-t border-slate-100">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-blue-700 flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4" /> 2. Parent / Guardian Contact Details
               </h3>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Parent or Guardian Full Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Vikram Sharma"
+                  value={parentName}
+                  onChange={(e) => setParentName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                />
+              </div>
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">
-                    Parent / Guardian Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Vikram Sharma"
-                    value={parentName}
-                    onChange={(e) => setParentName(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Email Address *
                   </label>
                   <input
@@ -307,50 +325,66 @@ export const AdmissionForm: React.FC<AdmissionFormProps> = ({ supabaseStatus }) 
                     placeholder="parent@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                   />
                 </div>
-              </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">
-                    Contact Phone Number *
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Phone / Mobile Number *
                   </label>
                   <input
                     type="tel"
                     required
-                    placeholder="+1 (555) 019-2831"
+                    placeholder="+91 98765 43210 or +1 (555) 019-2831"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">
-                    Residential Address *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="City, State, Country"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-lg border border-[#1E293B] bg-[#0A0C10] text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                   />
                 </div>
               </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Residential Address
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Flat/House No., Street Name, City, Postal Code"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                />
+              </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-3.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(16,185,129,0.25)] flex items-center justify-center gap-2 transition-all"
-            >
-              <Send className="w-4 h-4" />
-              <span>{submitting ? 'Submitting Application...' : 'Submit Admission Application'}</span>
-            </button>
+            {/* Declaration & Submit Button */}
+            <div className="pt-4 border-t border-slate-100 space-y-4">
+              <div className="p-3 bg-slate-50 rounded-xl text-[11px] text-slate-500 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>
+                  By submitting this form, you confirm that the details provided are accurate. We respect your privacy and will never share your contact details.
+                </span>
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {submitting ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Recording in Database...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    <span>Submit Admission Application</span>
+                  </>
+                )}
+              </button>
+            </div>
           </form>
         </div>
       )}

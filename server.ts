@@ -1,11 +1,12 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import cors from 'cors';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { INITIAL_NOTICES, ACADEMIC_PROGRAMS, FACULTY_MEMBERS, DEMO_STUDENT_RECORD } from './src/data/mockData.js';
+import { INITIAL_NOTICES, ACADEMIC_PROGRAMS, FACULTY_MEMBERS, DEMO_STUDENT_RECORD, UPCOMING_EVENTS } from './src/data/mockData.js';
 
 // Load environment variables from .env
 dotenv.config();
@@ -230,6 +231,41 @@ app.post('/api/notices', async (req, res) => {
   res.status(201).json(fallbackNotice);
 });
 
+// 4b. DELETE Notice
+app.delete('/api/notices/:id', async (req, res) => {
+  const { id } = req.params;
+  const client = getSupabaseServerClient();
+  if (client) {
+    try {
+      await client.from('notices').delete().eq('id', id);
+    } catch (err) {
+      console.warn('Supabase delete notice error:', err);
+    }
+  }
+  inMemoryNotices = inMemoryNotices.filter((n) => n.id !== id);
+  res.json({ success: true, id });
+});
+
+// 4c. GET Contact Inquiries (for Admin)
+app.get('/api/contact', async (req, res) => {
+  const client = getSupabaseServerClient();
+  if (client) {
+    try {
+      const { data, error } = await client
+        .from('contact_messages')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && Array.isArray(data)) {
+        return res.json(data);
+      }
+    } catch (err) {
+      console.warn('Supabase fetch contact messages error:', err);
+    }
+  }
+  res.json(inMemoryContacts);
+});
+
 // 5. POST Contact Inquiry
 app.post('/api/contact', async (req, res) => {
   const { name, email, phone, subject, message } = req.body;
@@ -386,6 +422,56 @@ app.post('/api/admissions', async (req, res) => {
     error: 'Database client not initialized. Please verify database connection.',
     supabaseSynced: false,
   });
+});
+
+// 6b. GET Admissions List (for Admin Dashboard)
+app.get('/api/admissions', async (req, res) => {
+  const client = getSupabaseServerClient();
+  if (client) {
+    try {
+      const { data, error } = await client
+        .from('admissions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && Array.isArray(data)) {
+        return res.json(data);
+      }
+    } catch (err: any) {
+      console.warn('Supabase fetch admissions error:', err.message);
+    }
+  }
+  res.json(inMemoryAdmissions);
+});
+
+// 6c. UPDATE Admission Status (for Admin Dashboard)
+const handleUpdateAdmissionStatus = async (req: express.Request, res: express.Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const client = getSupabaseServerClient();
+  if (client) {
+    try {
+      await client.from('admissions').update({ status }).eq('id', id);
+    } catch (err: any) {
+      console.warn('Supabase update admission error:', err.message);
+    }
+  }
+
+  const appRecord = inMemoryAdmissions.find((a) => a.id === id);
+  if (appRecord) {
+    appRecord.status = status;
+  }
+
+  res.json({ success: true, id, status });
+};
+
+app.patch('/api/admissions/:id', handleUpdateAdmissionStatus);
+app.put('/api/admissions/:id', handleUpdateAdmissionStatus);
+
+// 6d. GET Events
+app.get('/api/events', (req, res) => {
+  res.json(UPCOMING_EVENTS);
 });
 
 // 7. GET Academic Programs & Faculty (Convenience endpoints)
@@ -556,54 +642,171 @@ app.get('/api/student-portal/demo', (req, res) => {
 
 // 8. Gemini AI School Assistant Endpoint
 app.post('/api/ai/assistant', async (req, res) => {
-  const { message, conversationHistory } = req.body;
+  const { message, conversationHistory, userLocation } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'Message is required' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GEMINI_KEY ||
+    process.env.VITE_GEMINI_API_KEY ||
+    process.env.GOOGLE_GENAI_API_KEY;
+
+  // School location coordinates: 13.0827, 80.2707
+  let locationContext = '';
+  if (userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
+    const R = 6371;
+    const dLat = ((13.0827 - userLocation.lat) * Math.PI) / 180;
+    const dLon = ((80.2707 - userLocation.lng) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((userLocation.lat * Math.PI) / 180) *
+        Math.cos((13.0827 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distKm = Math.round(R * c * 10) / 10;
+    locationContext = `\nUser's detected geographic coordinates: (${userLocation.lat}, ${userLocation.lng}). They are approximately ${distKm} km from DCI AI School campus (~${Math.round(distKm * 2.2)} minutes driving time). If asked about distance, transit, bus routes or directions, reference this distance.`;
+  }
+
+  // Intelligent domain knowledge response generator (used if API key is not configured or all Gemini model calls fail)
+  const getDomainResponse = (msg: string) => {
+    const q = msg.toLowerCase();
+    if (q.includes('fee') || q.includes('cost') || q.includes('tuition') || q.includes('charge')) {
+      return (
+        "Here is the Annual Fee Structure for DCI AI School (Academic Session 2026-2027):\n\n" +
+        "• Early Years (Pre-K to KG): $4,500 / year (Inclusive of activity kits & snacks)\n" +
+        "• Primary School (Grades 1 to 5): $6,200 / year (Includes STEM robotics & sports)\n" +
+        "• Middle School (Grades 6 to 8): $7,800 / year (Includes science labs & coding)\n" +
+        "• High School (Grades 9 & 10): $9,500 / year (Board exam prep & advanced labs)\n" +
+        "• Senior Secondary (Grades 11 & 12): $10,800 / year (SAT/JEE/NEET mentorship)\n\n" +
+        "Scholarships: Merit scholarships (up to 40% fee waiver) and sports excellence grants are available. You can apply directly through the Admissions tab."
+      );
+    }
+    if (q.includes('admission') || q.includes('apply') || q.includes('register') || q.includes('process') || q.includes('deadline')) {
+      return (
+        "Admissions for Session 2026-2027 are officially open at DCI AI School:\n\n" +
+        "1. Complete the Online Application Form under the 'Admissions' menu.\n" +
+        "2. Required documents: Child's Birth Certificate, Previous Academic Transcripts, and Passport Photos.\n" +
+        "3. Admissions office evaluates applications within 24-48 business hours.\n" +
+        "4. Friendly interaction & campus walkthrough scheduled with academic counselors.\n\n" +
+        "Need immediate assistance? Contact admissions@dci-school.edu or call +1 (800) 555-DCI-AI."
+      );
+    }
+    if (q.includes('distance') || q.includes('location') || q.includes('where') || q.includes('reach') || q.includes('directions')) {
+      return (
+        `DCI AI School is located at 100 Academy Boulevard, Innovation City, 600001 (Coordinates: 13.0827° N, 80.2707° E).\n\n` +
+        (locationContext ? `${locationContext}\n\n` : '') +
+        `• GPS AC Buses cover 35+ prime city routes with live parent tracking.\n` +
+        `• You can use the 'Use My Current Location' tool in the Contact section to get turn-by-turn driving directions in Google Maps!`
+      );
+    }
+    if (q.includes('curriculum') || q.includes('cbse') || q.includes('ib') || q.includes('academic') || q.includes('subject') || q.includes('stream')) {
+      return (
+        "DCI AI School provides an integrated global academic continuum:\n\n" +
+        "• CBSE Board Curriculum: Recognized national excellence with 100% board pass rates.\n" +
+        "• IB World School Candidate: Inquiry-led Primary & Middle Years frameworks.\n" +
+        "• Senior Streams (Grades 11 & 12): AI & Computer Science STEM, Commerce, and Humanities with integrated Olympiad & university preparation.\n" +
+        "• Digital 1:1 Learning: Interactive smart panels and personalized learning analytics."
+      );
+    }
+    if (q.includes('facility') || q.includes('facilities') || q.includes('lab') || q.includes('robot') || q.includes('sport') || q.includes('pool')) {
+      return (
+        "Our 25-Acre Smart Eco-Campus features world-class infrastructure:\n\n" +
+        "• AI & Robotics Hub: 3D printing, Arduino, humanoid simulators, and GPU workstations.\n" +
+        "• Olympic Aquatic Complex: Heated 50-meter 8-lane competition swimming pool.\n" +
+        "• Science Labs: Dedicated Physics, Chemistry, and Biotechnology research facilities.\n" +
+        "• Central Library: Over 30,000 titles, e-readers, and digital research subscriptions.\n" +
+        "• Performing Arts: Acoustic orchestral studios and Indian classical dance amphitheater."
+      );
+    }
+    return (
+      "Welcome to DCI AI School! I am your AI Virtual Concierge.\n\n" +
+      "• Admissions: Open for 2026-2027 Academic Session (Pre-K to Grade 12).\n" +
+      "• Curriculum: CBSE & IB World School Candidate.\n" +
+      "• Campus: 25-acre modern facility with AI labs, Olympic pool, and 35+ bus routes.\n" +
+      "• Office Hours: Mon - Fri: 8:00 AM - 3:30 PM, Sat: 9:00 AM - 1:00 PM.\n" +
+      "• Contact: admissions@dci-school.edu | +1 (800) 555-DCI-AI.\n\n" +
+      "How can I help you today? Feel free to ask about fees, admissions, curriculum, or campus tours!"
+    );
+  };
 
   if (!apiKey) {
-    return res.json({
-      reply:
-        "I'm the DCI AI School Virtual Assistant! (To activate my real-time Gemini AI intelligence, please ensure GEMINI_API_KEY is configured in your secrets). \n\nHere are quick details about DCI AI School:\n- **Admissions**: Open for 2026-2027 Academic Session (Pre-K to Grade 12).\n- **Facilities**: Advanced AI & Robotics Labs, Olympic Swimming Pool, Indoor Sports Arena, Smart Classrooms.\n- **Timings**: 8:00 AM to 3:15 PM (Mon - Fri).\n- **Contact**: admissions@dci-school.edu | +1 (800) 555-DCI-AI.",
-    });
+    console.warn('GEMINI_API_KEY not configured on server, using domain engine.');
+    return res.json({ reply: getDomainResponse(message) });
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    });
 
     const systemPrompt = `You are the friendly, professional, and knowledgeable AI Virtual Concierge for "DCI AI School".
 Your goal is to assist parents, students, and prospective applicants with clear, warm, and structured information about the school.
 
 School Details:
 - Name: DCI AI School
-- Motto: "Excellence in Academics, Character & Innovation"
-- Affiliations: CBSE, IB World School & Cambridge Assessment
-- Grades Offered: Early Years (Pre-K to KG), Primary (1-5), Middle School (6-8), High School (9-12)
-- Campus Features: 25-acre green eco campus, STEM & AI Robotics Hub, Olympic Swimming Pool, Planetarium, Performing Arts Theater, 100% Board Exam Pass Rate.
-- Admissions: Open for 2026-2027. Online application form available on portal.
-- Annual Fee Structure: Pre-K/KG ($4,500/yr), Primary ($6,200/yr), Middle ($7,800/yr), High School ($9,500/yr). Scholarships available for sports and academic merit.
-- Transport: GPS-tracked AC buses covering 35+ routes.
+- Motto: "Empowering Students. Inspiring Futures."
+- Affiliations: CBSE, IB World School Candidate & Cambridge Assessment
+- Grades: Pre-K to Grade 12 (Early Years, Primary, Middle, Secondary, Higher Secondary)
+- Campus Features: 25-acre modern green eco-campus, STEM & AI Robotics Hub, Olympic 50m Swimming Pool, Performing Arts Auditorium, 100% Board Exam Pass Rate.
+- Admissions: Open for 2026-2027 session. Online application form is available directly on this portal.
+- Fee Structure: Pre-K ($4,500/yr), Primary ($6,200/yr), Middle ($7,800/yr), High School ($9,500/yr), Higher Sec ($10,800/yr). Scholarships available for merit and sports.
+- Transport: GPS-tracked AC buses covering 35+ city routes with parent notification app.
+- Timings: Monday to Friday: 8:00 AM - 3:30 PM, Saturday: 9:00 AM - 1:00 PM.
+- Address: 100 Academy Boulevard, Innovation City, 600001 (Coordinates: 13.0827° N, 80.2707° E).
+${locationContext}
 
-Be polite, helpful, concise, and encourage parents to submit an online admission form or book a campus tour.`;
+Be polite, helpful, concise, well-formatted with bullet points where appropriate, and encourage parents to submit the online admission form or schedule a campus visit.`;
 
-    const fullPrompt = `${systemPrompt}\n\nUser Question: ${message}`;
+    let historyText = '';
+    if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
+      const recent = conversationHistory.slice(-8);
+      historyText = recent
+        .map((m: any) => `${m.sender === 'user' ? 'User' : 'Assistant'}: ${m.text}`)
+        .join('\n');
+    }
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: fullPrompt,
-    });
+    const fullPrompt = `${systemPrompt}\n\n${historyText ? `Previous Conversation:\n${historyText}\n\n` : ''}User Question: ${message}\n\nAssistant Response:`;
 
-    const reply = response.text || 'Thank you for reaching out to DCI AI School!';
-    res.json({ reply });
+    // Multi-model failover strategy: gemini-3.1-flash-lite, gemini-3.5-flash, gemini-3.8-flash, gemini-flash-latest
+    const candidateModels = ['gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-flash-latest'];
+    let generatedText = '';
+    let lastError: any = null;
+
+    for (const model of candidateModels) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: fullPrompt,
+        });
+        if (response && response.text) {
+          generatedText = response.text;
+          break;
+        }
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Model ${model} attempt failed (${err.status || err.message}). Trying next candidate...`);
+      }
+    }
+
+    if (generatedText) {
+      return res.json({ reply: generatedText });
+    }
+
+    console.warn('All Gemini model candidates failed, using domain response fallback:', lastError?.message);
+    return res.json({ reply: getDomainResponse(message) });
   } catch (error: any) {
-    console.error('Gemini API Error:', error);
-    res.json({
-      reply:
-        'Thank you for asking about DCI AI School. Admissions for the 2026-2027 session are currently open! You can fill out the Admission Application directly in the portal or email admissions@dci-school.edu.',
-    });
+    console.error('Gemini server execution error:', error);
+    return res.json({ reply: getDomainResponse(message) });
   }
 });
 
@@ -611,18 +814,27 @@ Be polite, helpful, concise, and encourage parents to submit an online admission
 // VITE DEV SERVER / PRODUCTION STATIC SERVING
 // -------------------------------------------------------------------
 async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
+  const isDev = process.env.npm_lifecycle_event === 'dev' || process.env.NODE_ENV === 'development';
+  const distPath = path.join(process.cwd(), 'dist');
+  const distExists = fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'));
+
+  if (isDev && !process.env.FORCE_PROD) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
+  } else if (distExists) {
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
+  } else {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
   }
 
   app.listen(PORT, '0.0.0.0', () => {
